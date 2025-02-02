@@ -1,8 +1,23 @@
 "use client";
 
-import { TeacherForm } from "@/components/forms/teacher-form";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useState } from "react";
+// import { StudentForm } from "@/components/forms/student-form";
+// import { TeacherForm } from "@/components/forms/teacher-form";
+const TeacherForm = dynamic(
+  () => import("./forms/teacher-form").then((mod) => mod.TeacherForm),
+  {
+    loading: () => <h1>Loading...</h1>,
+  }
+);
+
+const StudentForm = dynamic(
+  () => import("./forms/student-form").then((mod) => mod.StudentForm),
+  {
+    loading: () => <h1>Loading...</h1>,
+  }
+);
 
 interface FormModalProps {
   table:
@@ -22,6 +37,13 @@ interface FormModalProps {
   data?: any;
   id?: number;
 }
+
+const forms: {
+  [key: string]: (type: "create" | "update", data?: any) => JSX.Element;
+} = {
+  teacher: (type, data) => <TeacherForm type={type} data={data} />,
+  student: (type, data) => <StudentForm type={type} data={data} />,
+};
 
 export const FormModal = ({ table, type, data, id }: FormModalProps) => {
   const size = type === "create" ? "size-8" : "size-7";
@@ -45,8 +67,10 @@ export const FormModal = ({ table, type, data, id }: FormModalProps) => {
           Delete
         </button>
       </form>
+    ) : type === "create" || type === "update" ? (
+      forms[table](type, data)
     ) : (
-      <TeacherForm type="create" />
+      "Form not found"
     );
   };
 
