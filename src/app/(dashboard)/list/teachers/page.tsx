@@ -2,7 +2,9 @@ import { FormModal } from "@/components/form-modal";
 import { Pagination } from "@/components/pagination";
 import { TableList } from "@/components/table-list";
 import { TableSearch } from "@/components/table-search";
-import { role, teachersData } from "@/lib/data";
+import { role } from "@/lib/data";
+import prisma from "@/lib/prisma";
+import { Class, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -42,58 +44,59 @@ const columns = [
   },
 ];
 
-type Teacher = {
-  id: number;
-  teacherId: string;
-  name: string;
-  email?: string;
-  photo: string;
-  subjects: string[];
-  classes: string[];
-  address?: string;
-  phone?: string;
+type TeacherList = Teacher & { subjects: Subject[]; classes: Class[] };
+
+const renderRow = (item: TeacherList) => {
+  return (
+    <tr
+      key={item.id}
+      className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-opPurpleLight"
+    >
+      <td className="flex items-center gap-4 p-4">
+        <Image
+          src={item.img || "/noavatar.png"}
+          alt={item.name}
+          width={40}
+          height={40}
+          className="md:hidden xl:block size-10 rounded-full object-cover"
+        />
+        <div className="flex flex-col">
+          <h3 className="font-semibold ">{item.name}</h3>
+          <p className="text-xs text-gray-500">{item?.email}</p>
+        </div>
+      </td>
+      <td className="hidden md:table-cell">{item.username}</td>
+      <td className="hidden md:table-cell">
+        {item.subjects.map((subject) => subject.name).join(", ")}
+      </td>
+      <td className="hidden md:table-cell">
+        {item.classes.map((classItem) => classItem.name).join(", ")}
+      </td>
+      <td className="hidden md:table-cell">{item.phone}</td>
+      <td className="hidden md:table-cell">{item.address}</td>
+      <td className="">
+        <div className="flex items-center gap-2">
+          <Link href={`/list/teachers/${item.id}`}>
+            <button className="flex items-center justify-center size-7 rounded-full bg-opSky">
+              <Image src={"/view.png"} alt="view" width={16} height={16} />
+            </button>
+          </Link>
+          {role === "admin" && (
+            <FormModal table="teacher" type="delete" id={item.id} />
+          )}
+        </div>
+      </td>
+    </tr>
+  );
 };
 
-const TeachersList = () => {
-  const renderRow = (item: Teacher) => {
-    return (
-      <tr
-        key={item.id}
-        className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-opPurpleLight"
-      >
-        <td className="flex items-center gap-4 p-4">
-          <Image
-            src={item.photo}
-            alt={item.name}
-            width={40}
-            height={40}
-            className="md:hidden xl:block size-10 rounded-full object-cover"
-          />
-          <div className="flex flex-col">
-            <h3 className="font-semibold ">{item.name}</h3>
-            <p className="text-xs text-gray-500">{item?.email}</p>
-          </div>
-        </td>
-        <td className="hidden md:table-cell">{item.teacherId}</td>
-        <td className="hidden md:table-cell">{item.classes.join(", ")}</td>
-        <td className="hidden md:table-cell">{item.subjects.join(", ")}</td>
-        <td className="hidden md:table-cell">{item.phone}</td>
-        <td className="hidden md:table-cell">{item.address}</td>
-        <td className="">
-          <div className="flex items-center gap-2">
-            <Link href={`/list/teachers/${item.id}`}>
-              <button className="flex items-center justify-center size-7 rounded-full bg-opSky">
-                <Image src={"/view.png"} alt="view" width={16} height={16} />
-              </button>
-            </Link>
-            {role === "admin" && (
-              <FormModal table="teacher" type="delete" id={item.id} />
-            )}
-          </div>
-        </td>
-      </tr>
-    );
-  };
+const TeachersList = async () => {
+  const teachersData = await prisma.teacher.findMany({
+    include: {
+      subjects: true,
+      classes: true,
+    },
+  });
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
