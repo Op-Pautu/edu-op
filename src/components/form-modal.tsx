@@ -37,9 +37,8 @@ interface FormModalProps {
   data?: any;
   id?: number;
 }
-
 const forms: {
-  [key: string]: (type: "create" | "update", data?: any) => JSX.Element;
+  [key: string]: (type: "create" | "update", data?: any) => React.ReactElement;
 } = {
   teacher: (type, data) => <TeacherForm type={type} data={data} />,
   student: (type, data) => <StudentForm type={type} data={data} />,

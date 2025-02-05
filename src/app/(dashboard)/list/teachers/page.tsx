@@ -82,7 +82,9 @@ const renderRow = (item: TeacherList) => {
             </button>
           </Link>
           {role === "admin" && (
-            <FormModal table="teacher" type="delete" id={item.id} />
+            <FormModal table="teacher" type="delete"
+            // @ts-ignore
+            id={item.id} />
           )}
         </div>
       </td>
@@ -96,6 +98,7 @@ const TeachersList = async () => {
       subjects: true,
       classes: true,
     },
+    take: 10,
   });
 
   return (
