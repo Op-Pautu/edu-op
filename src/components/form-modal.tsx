@@ -82,7 +82,7 @@ export const FormModal = ({ table, type, data, id }: FormModalProps) => {
         <Image src={`/${type}.png`} alt="action" width={16} height={16} />
       </button>
       {open && (
-        <div className="w-screen h-screen absolute left-0 top-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+        <div className="w-screen h-screen absolute left-0 top-0 bg-black bg-black/60 z-50 flex items-center justify-center">
           <div className="bg-white p-4 rounded-md relative w-11/12 md:w-[70%] lg:w-[60%] xl:w-1/2 2xl:w-[40%]">
             <Form />
             <div
