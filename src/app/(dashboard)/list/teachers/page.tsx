@@ -2,9 +2,10 @@ import { FormModal } from "@/components/form-modal";
 import { Pagination } from "@/components/pagination";
 import { TableList } from "@/components/table-list";
 import { TableSearch } from "@/components/table-search";
+import { ITEMS_PER_PAGE } from "@/lib/constants";
 import { role } from "@/lib/data";
 import prisma from "@/lib/prisma";
-import { Class, Subject, Teacher } from "@prisma/client";
+import { Class, Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -82,9 +83,12 @@ const renderRow = (item: TeacherList) => {
             </button>
           </Link>
           {role === "admin" && (
-            <FormModal table="teacher" type="delete"
-            // @ts-ignore
-            id={item.id} />
+            <FormModal
+              table="teacher"
+              type="delete"
+              // @ts-ignore
+              id={item.id}
+            />
           )}
         </div>
       </td>
@@ -92,14 +96,51 @@ const renderRow = (item: TeacherList) => {
   );
 };
 
-const TeachersList = async () => {
-  const teachersData = await prisma.teacher.findMany({
-    include: {
-      subjects: true,
-      classes: true,
-    },
-    take: 10,
-  });
+type SearchParams = Promise<{ [key: string]: string | undefined }>;
+
+const TeachersList = async ({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) => {
+  const { page, ...queryParams } = await searchParams;
+
+  const pageNumber = page ? parseInt(page) : 1;
+
+  const query: Prisma.TeacherWhereInput = {}
+
+  // URL PARAMS CONDITIONS
+  if (queryParams) {
+    for (const [key, value] of Object.entries(queryParams)) {
+      if (value !== undefined) {
+        switch (key) {
+          case "classId": {
+            query.lessons = {
+              some: {
+                classId: parseInt(value)
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const [teachersData, count] = await prisma.$transaction([
+    prisma.teacher.findMany({
+      where: query,
+      include: {
+        subjects: true,
+        classes: true,
+      },
+      take: ITEMS_PER_PAGE,
+      skip: (pageNumber - 1) * ITEMS_PER_PAGE,
+    }),
+    prisma.teacher.count({
+      where: query,
+    }),
+  ]);
+
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
@@ -119,7 +160,7 @@ const TeachersList = async () => {
         </div>
       </div>
       <TableList columns={columns} renderRow={renderRow} data={teachersData} />
-      <Pagination />
+      <Pagination totalItems={count} currentPage={pageNumber} />
     </div>
   );
 };
