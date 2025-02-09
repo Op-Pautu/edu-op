@@ -2,15 +2,13 @@ import { FormModal } from "@/components/form-modal";
 import { Pagination } from "@/components/pagination";
 import { TableList } from "@/components/table-list";
 import { TableSearch } from "@/components/table-search";
-import { announcementsData, role } from "@/lib/data";
+import { role } from "@/lib/data";
 import Image from "next/image";
+import { Announcement, Class, Prisma } from "@prisma/client";
+import prisma from "@/lib/prisma";
+import { ITEMS_PER_PAGE } from "@/lib/constants";
 
-type Announcement = {
-  id: number;
-  title: string;
-  class: string;
-  date: string;
-};
+type AnnouncementList = Announcement & { class: Class };
 
 const columns = [
   {
@@ -32,32 +30,81 @@ const columns = [
   },
 ];
 
-const AnnouncementListPage = () => {
-  const renderRow = (item: Announcement) => (
-    <tr
-      key={item.id}
-      className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-opPurpleLight "
-    >
-      <td className="flex items-center gap-4 p-4">{item.title}</td>
-      <td>{item.class}</td>
-      <td className="hidden md:table-cell">{item.date}</td>
-      <td>
-        <div className="flex items-center gap-2">
-          {role === "admin" && (
-            <>
-              <FormModal
-                table="announcement"
-                type="update"
-                id={item.id}
-                data={item}
-              />
-              <FormModal table="announcement" type="delete" id={item.id} />
-            </>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
+const renderRow = (item: AnnouncementList) => (
+  <tr
+    key={item.id}
+    className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-opPurpleLight "
+  >
+    <td className="flex items-center gap-4 p-4">{item.title}</td>
+    <td>{item.class.name}</td>
+    <td className="hidden md:table-cell">
+      {new Intl.DateTimeFormat("en-US").format(item.date)}
+    </td>
+    <td>
+      <div className="flex items-center gap-2">
+        {role === "admin" && (
+          <>
+            <FormModal
+              table="announcement"
+              type="update"
+              id={item.id}
+              data={item}
+            />
+            <FormModal table="announcement" type="delete" id={item.id} />
+          </>
+        )}
+      </div>
+    </td>
+  </tr>
+);
+
+type SearchParams = Promise<{ [key: string]: string | undefined }>;
+
+const AnnouncementListPage = async ({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) => {
+  const { page, ...queryParams } = await searchParams;
+
+  const pageNumber = page ? parseInt(page) : 1;
+
+  const query: Prisma.AnnouncementWhereInput = {};
+
+  // URL PARAMS CONDITIONS
+
+  if (queryParams) {
+    for (const [key, value] of Object.entries(queryParams)) {
+      if (value !== undefined) {
+        switch (key) {
+          case "search":
+            {
+              query.title = {
+                contains: value,
+                mode: "insensitive",
+              };
+            }
+            break;
+          default:
+            break;
+        }
+      }
+    }
+  }
+
+  const [announcementsData, count] = await prisma.$transaction([
+    prisma.announcement.findMany({
+      where: query,
+      include: {
+        class: true,
+      },
+      take: ITEMS_PER_PAGE,
+      skip: (pageNumber - 1) * ITEMS_PER_PAGE,
+    }),
+    prisma.announcement.count({
+      where: query,
+    }),
+  ]);
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
@@ -88,7 +135,7 @@ const AnnouncementListPage = () => {
         data={announcementsData}
       />
       {/* PAGINATION */}
-      <Pagination />
+      <Pagination totalItems={count} currentPage={pageNumber} />
     </div>
   );
 };
