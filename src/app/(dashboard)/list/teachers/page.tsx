@@ -107,26 +107,32 @@ const TeachersList = async ({
 
   const pageNumber = page ? parseInt(page) : 1;
 
-  const query: Prisma.TeacherWhereInput = {}
+  const query: Prisma.TeacherWhereInput = {};
 
   // URL PARAMS CONDITIONS
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
-          case "classId": {
-            query.lessons = {
-              some: {
-                classId: parseInt(value)
-              }
+          case "classId":
+            {
+              query.lessons = {
+                some: {
+                  classId: parseInt(value),
+                },
+              };
             }
-          }
             break;
-          case "search": {
-            query.name = {
-              contains: value, mode: "insensitive"
+          case "search":
+            {
+              query.name = {
+                contains: value,
+                mode: "insensitive",
+              };
             }
-          }
+            break;
+          default:
+            break;
         }
       }
     }
@@ -146,7 +152,6 @@ const TeachersList = async ({
       where: query,
     }),
   ]);
-
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
