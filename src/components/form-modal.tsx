@@ -35,7 +35,7 @@ interface FormModalProps {
     | "announcement";
   type: "create" | "update" | "delete";
   data?: any;
-  id?: number;
+  id?: number | string;
 }
 const forms: {
   [key: string]: (type: "create" | "update", data?: any) => React.ReactElement;
