@@ -1,4 +1,4 @@
-import { FormModal } from "@/components/form-modal";
+import FormModal from "@/components/form-modal";
 import { Pagination } from "@/components/pagination";
 import { TableList } from "@/components/table-list";
 import { TableSearch } from "@/components/table-search";
