@@ -1,4 +1,4 @@
-import  FormModal from "@/components/form-modal";
+import FormModal from "@/components/form-modal";
 import { Pagination } from "@/components/pagination";
 import { TableList } from "@/components/table-list";
 import { TableSearch } from "@/components/table-search";
@@ -23,7 +23,7 @@ const renderRow = async (item: AnnouncementList) => (
     </td>
     <td>
       <div className="flex items-center gap-2">
-        {(await getRole()) === "admin" && (
+        {(await getRole()).role === "admin" && (
           <>
             <FormModal
               table="announcement"
@@ -46,7 +46,7 @@ const AnnouncementListPage = async ({
 }: {
   searchParams: SearchParams;
 }) => {
-  const role = await getRole();
+  const { role } = await getRole();
 
   const { page, ...queryParams } = await searchParams;
 

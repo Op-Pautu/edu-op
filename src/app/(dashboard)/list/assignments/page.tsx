@@ -32,8 +32,8 @@ const renderRow = async (item: AssignmentList) => (
     </td>
     <td>
       <div className="flex items-center gap-2">
-        {(await getRole()) === "admin" ||
-          ((await getRole()) === "teacher" && (
+        {(await getRole()).role === "admin" ||
+          ((await getRole()).role === "teacher" && (
             <>
               <FormModal table="assignment" type="update" data={item} />
               <FormModal table="assignment" type="delete" id={item.id} />
@@ -57,7 +57,9 @@ const AssignmentListPage = async ({
 
   const query: Prisma.AssignmentWhereInput = {};
 
-  const role = await getRole();
+  query.lesson = {};
+
+  const { role, currentUserId } = await getRole();
 
   const columns = [
     {
@@ -94,15 +96,14 @@ const AssignmentListPage = async ({
       if (value !== undefined) {
         switch (key) {
           case "classId":
-            query.lesson = { classId: parseInt(value) };
+            query.lesson.classId = parseInt(value);
             break;
           case "teacherId":
-            query.lesson = { teacherId: value };
+            query.lesson.teacherId = value;
             break;
-
           case "search":
-            query.lesson = {
-              subject: { name: { contains: value, mode: "insensitive" } },
+            query.lesson.subject = {
+              name: { contains: value, mode: "insensitive" },
             };
             break;
           default:
@@ -110,6 +111,35 @@ const AssignmentListPage = async ({
         }
       }
     }
+  }
+
+  // ROLE CONDITIONS
+  switch (role) {
+    case "admin":
+      break;
+    case "teacher":
+      query.lesson.teacherId = currentUserId!;
+      break;
+    case "student":
+      query.lesson.class = {
+        students: {
+          some: {
+            id: currentUserId!,
+          },
+        },
+      };
+      break;
+    case "parent":
+      query.lesson.class = {
+        students: {
+          some: {
+            parentId: currentUserId!,
+          },
+        },
+      };
+      break;
+    default:
+      break;
   }
 
   const [assignmentsData, count] = await prisma.$transaction([
