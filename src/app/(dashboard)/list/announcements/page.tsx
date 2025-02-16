@@ -2,35 +2,16 @@ import { FormModal } from "@/components/form-modal";
 import { Pagination } from "@/components/pagination";
 import { TableList } from "@/components/table-list";
 import { TableSearch } from "@/components/table-search";
-import { role } from "@/lib/data";
 import Image from "next/image";
 import { Announcement, Class, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ITEMS_PER_PAGE } from "@/lib/constants";
+import { auth } from "@clerk/nextjs/server";
+import { getRole } from "@/lib/utils";
 
 type AnnouncementList = Announcement & { class: Class };
 
-const columns = [
-  {
-    header: "Title",
-    accessor: "title",
-  },
-  {
-    header: "Class",
-    accessor: "class",
-  },
-  {
-    header: "Date",
-    accessor: "date",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Actions",
-    accessor: "action",
-  },
-];
-
-const renderRow = (item: AnnouncementList) => (
+const renderRow = async (item: AnnouncementList) => (
   <tr
     key={item.id}
     className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-opPurpleLight "
@@ -42,7 +23,7 @@ const renderRow = (item: AnnouncementList) => (
     </td>
     <td>
       <div className="flex items-center gap-2">
-        {role === "admin" && (
+        {(await getRole()) === "admin" && (
           <>
             <FormModal
               table="announcement"
@@ -65,6 +46,8 @@ const AnnouncementListPage = async ({
 }: {
   searchParams: SearchParams;
 }) => {
+  const role = await getRole();
+
   const { page, ...queryParams } = await searchParams;
 
   const pageNumber = page ? parseInt(page) : 1;
@@ -72,6 +55,29 @@ const AnnouncementListPage = async ({
   const query: Prisma.AnnouncementWhereInput = {};
 
   // URL PARAMS CONDITIONS
+  const columns = [
+    {
+      header: "Title",
+      accessor: "title",
+    },
+    {
+      header: "Class",
+      accessor: "class",
+    },
+    {
+      header: "Date",
+      accessor: "date",
+      className: "hidden md:table-cell",
+    },
+    ...(role === "admin"
+      ? [
+          {
+            header: "Actions",
+            accessor: "action",
+          },
+        ]
+      : []),
+  ];
 
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
