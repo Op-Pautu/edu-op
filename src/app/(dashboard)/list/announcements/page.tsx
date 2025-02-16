@@ -17,7 +17,7 @@ const renderRow = async (item: AnnouncementList) => (
     className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-opPurpleLight "
   >
     <td className="flex items-center gap-4 p-4">{item.title}</td>
-    <td>{item.class.name}</td>
+    <td>{item.class?.name || "-"}</td>
     <td className="hidden md:table-cell">
       {new Intl.DateTimeFormat("en-US").format(item.date)}
     </td>
@@ -46,7 +46,7 @@ const AnnouncementListPage = async ({
 }: {
   searchParams: SearchParams;
 }) => {
-  const { role } = await getRole();
+  const { role, currentUserId } = await getRole();
 
   const { page, ...queryParams } = await searchParams;
 
@@ -97,7 +97,39 @@ const AnnouncementListPage = async ({
       }
     }
   }
+  // ROLE CONDITIONS
+  const roleConditions = {
+    teacher: {
+      lessons: {
+        some: {
+          teacherId: currentUserId!,
+        },
+      },
+    },
+    student: {
+      students: {
+        some: {
+          id: currentUserId!,
+        },
+      },
+    },
+    parent: {
+      students: {
+        some: {
+          parentId: currentUserId!,
+        },
+      },
+    },
+  };
 
+  query.OR = [
+    {
+      classId: null,
+    },
+    {
+      class: roleConditions[role as keyof typeof roleConditions] || {},
+    },
+  ];
   const [announcementsData, count] = await prisma.$transaction([
     prisma.announcement.findMany({
       where: query,
