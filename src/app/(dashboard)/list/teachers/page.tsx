@@ -1,53 +1,18 @@
-import { FormModal } from "@/components/form-modal";
+import FormModal from "@/components/form-modal";
 import { Pagination } from "@/components/pagination";
 import { TableList } from "@/components/table-list";
 import { TableSearch } from "@/components/table-search";
 import { ITEMS_PER_PAGE } from "@/lib/constants";
-import { role } from "@/lib/data";
 import prisma from "@/lib/prisma";
+import { getRole } from "@/lib/utils";
 import { Class, Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 
-const columns = [
-  {
-    header: "Info",
-    accessor: "info",
-  },
-  {
-    header: "Teacher ID",
-    accessor: "teacherId",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Subjects",
-    accessor: "subjects",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Classes",
-    accessor: "classes",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Phone",
-    accessor: "phone",
-    className: "hidden lg:table-cell",
-  },
-  {
-    header: "Address",
-    accessor: "address",
-    className: "hidden lg:table-cell",
-  },
-  {
-    header: "Actions",
-    accessor: "actions",
-  },
-];
-
 type TeacherList = Teacher & { subjects: Subject[]; classes: Class[] };
 
-const renderRow = (item: TeacherList) => {
+const renderRow = async (item: TeacherList) => {
+  const { role } = await getRole();
   return (
     <tr
       key={item.id}
@@ -83,12 +48,7 @@ const renderRow = (item: TeacherList) => {
             </button>
           </Link>
           {role === "admin" && (
-            <FormModal
-              table="teacher"
-              type="delete"
-              // @ts-ignore
-              id={item.id}
-            />
+            <FormModal table="teacher" type="delete" id={item.id} />
           )}
         </div>
       </td>
@@ -108,7 +68,46 @@ const TeachersList = async ({
   const pageNumber = page ? parseInt(page) : 1;
 
   const query: Prisma.TeacherWhereInput = {};
-
+  const { role } = await getRole();
+  const columns = [
+    {
+      header: "Info",
+      accessor: "info",
+    },
+    {
+      header: "Teacher ID",
+      accessor: "teacherId",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Subjects",
+      accessor: "subjects",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Classes",
+      accessor: "classes",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Phone",
+      accessor: "phone",
+      className: "hidden lg:table-cell",
+    },
+    {
+      header: "Address",
+      accessor: "address",
+      className: "hidden lg:table-cell",
+    },
+    ...(role === "admin"
+      ? [
+          {
+            header: "Actions",
+            accessor: "actions",
+          },
+        ]
+      : []),
+  ];
   // URL PARAMS CONDITIONS
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {

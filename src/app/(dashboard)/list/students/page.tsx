@@ -1,48 +1,17 @@
-import { FormModal } from "@/components/form-modal";
+import FormModal from "@/components/form-modal";
 import { Pagination } from "@/components/pagination";
 import { TableList } from "@/components/table-list";
 import { TableSearch } from "@/components/table-search";
 import { ITEMS_PER_PAGE } from "@/lib/constants";
-import { role, studentsData } from "@/lib/data";
 import prisma from "@/lib/prisma";
+import { getRole } from "@/lib/utils";
 import { Class, Prisma, Student } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 
-const columns = [
-  {
-    header: "Info",
-    accessor: "info",
-  },
-  {
-    header: "Student ID",
-    accessor: "studentId",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Grade",
-    accessor: "grade",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Phone",
-    accessor: "phone",
-    className: "hidden lg:table-cell",
-  },
-  {
-    header: "Address",
-    accessor: "address",
-    className: "hidden lg:table-cell",
-  },
-  {
-    header: "Actions",
-    accessor: "actions",
-  },
-];
-
 type StudentList = Student & { class: Class };
 
-const renderRow = (item: StudentList) => {
+const renderRow = async (item: StudentList) => {
   return (
     <tr
       key={item.id}
@@ -72,7 +41,7 @@ const renderRow = (item: StudentList) => {
               <Image src={"/view.png"} alt="view" width={16} height={16} />
             </button>
           </Link>
-          {role === "admin" && (
+          {(await getRole()).role === "admin" && (
             <FormModal table="student" type="delete" id={item.id} />
           )}
         </div>
@@ -93,6 +62,43 @@ const StudentsListPage = async ({
   const pageNumber = page ? parseInt(page) : 1;
 
   const query: Prisma.StudentWhereInput = {};
+
+  const { role } = await getRole();
+
+  const columns = [
+    {
+      header: "Info",
+      accessor: "info",
+    },
+    {
+      header: "Student ID",
+      accessor: "studentId",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Grade",
+      accessor: "grade",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Phone",
+      accessor: "phone",
+      className: "hidden lg:table-cell",
+    },
+    {
+      header: "Address",
+      accessor: "address",
+      className: "hidden lg:table-cell",
+    },
+    ...(role === "admin"
+      ? [
+          {
+            header: "Actions",
+            accessor: "actions",
+          },
+        ]
+      : []),
+  ];
 
   // URL PARAMS CONDITIONS
   if (queryParams) {

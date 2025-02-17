@@ -32,7 +32,8 @@ const renderRow = async (item: ExamList) => (
     </td>
     <td>
       <div className="flex items-center gap-2">
-        {(await getRole()).role === "admin" && (
+        {((await getRole()).role === "admin" ||
+          (await getRole()).role === "teacher") && (
           <>
             <FormModal table="exam" type="update" data={item} />
             <FormModal table="exam" type="delete" id={item.id} />
@@ -111,7 +112,6 @@ const ExamListPage = async ({
       }
     }
   }
-
 
   // ROLE CONDITIONS
   switch (role) {

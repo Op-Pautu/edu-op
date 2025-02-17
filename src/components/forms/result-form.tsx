@@ -13,7 +13,7 @@ import { useFormState } from "react-dom";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
-const AssignmentForm = ({
+const ResultForm = ({
   type,
   data,
   setOpen,
@@ -56,7 +56,7 @@ const AssignmentForm = ({
   //   }
   // }, [state, router, type, setOpen]);
 
-  const { results } = relatedData;
+  const { lessons } = relatedData;
 
   return (
     <form
@@ -64,35 +64,37 @@ const AssignmentForm = ({
       // onSubmit={onSubmit}
     >
       <h1 className="text-xl font-semibold">
-        {type === "create" ? "Create a new result" : "Update the result"}
+        {type === "create"
+          ? "Create a new assignment"
+          : "Update the assignment"}
       </h1>
 
       <div className="flex justify-between flex-wrap gap-4">
         <InputField
-          label="Student Name"
+          label="Assignment Name"
           name="name"
           defaultValue={data?.name}
           register={register}
           // error={errors.name}
         />
         <InputField
-          label="Score"
-          name="score"
-          defaultValue={data?.score}
+          label="Due Date"
+          name="dueDate"
+          defaultValue={data?.dueDate}
           register={register}
           // error={errors.dueDate}
-          type="number"
+          type="date"
         />
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Result</label>
+          <label className="text-xs text-gray-500">Lesson</label>
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             // {...register("lessonId")}
             defaultValue={data?.lessonId}
           >
-            {results.map((result: { id: number; name: string }) => (
-              <option value={result.id} key={result.id}>
-                {result.name}
+            {lessons.map((lesson: { id: number; name: string }) => (
+              <option value={lesson.id} key={lesson.id}>
+                {lesson.name}
               </option>
             ))}
           </select>
@@ -114,4 +116,4 @@ const AssignmentForm = ({
   );
 };
 
-export default AssignmentForm;
+export default ResultForm;

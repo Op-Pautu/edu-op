@@ -3,8 +3,8 @@ import { Pagination } from "@/components/pagination";
 import { TableList } from "@/components/table-list";
 import { TableSearch } from "@/components/table-search";
 import { ITEMS_PER_PAGE } from "@/lib/constants";
-import { role } from "@/lib/data";
 import prisma from "@/lib/prisma";
+import { getRole } from "@/lib/utils";
 import { Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
 
@@ -25,7 +25,7 @@ const columns = [
     accessor: "action",
   },
 ];
-const renderRow = (item: SubjectList) => (
+const renderRow = async (item: SubjectList) => (
   <tr
     key={item.id}
     className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-opPurpleLight"
@@ -36,9 +36,9 @@ const renderRow = (item: SubjectList) => (
     </td>
     <td>
       <div className="flex items-center gap-2">
-        {role === "admin" && (
+        {(await getRole()).role === "admin" && (
           <>
-            <FormModal table="subject" type="update" id={item.id} data={item} />
+            <FormModal table="subject" type="update" data={item} />
             <FormModal table="subject" type="delete" id={item.id} />
           </>
         )}
@@ -59,7 +59,7 @@ const SubjectListPage = async ({
   const pageNumber = page ? parseInt(page) : 1;
 
   const query: Prisma.SubjectWhereInput = {};
-
+  const { role } = await getRole();
   // URL PARAMS CONDITIONS
 
   if (queryParams) {

@@ -1,3 +1,4 @@
+import FormModal from "@/components/form-modal";
 import { Pagination } from "@/components/pagination";
 import { TableList } from "@/components/table-list";
 import { TableSearch } from "@/components/table-search";
@@ -10,6 +11,7 @@ import {
   role,
 } from "@/lib/data";
 import prisma from "@/lib/prisma";
+import { getRole } from "@/lib/utils";
 import { Prisma } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,43 +28,7 @@ type ResultList = {
   className: string;
 };
 
-const columns = [
-  {
-    header: "Title",
-    accessor: "title",
-  },
-
-  {
-    header: "Student",
-    accessor: "student",
-  },
-  {
-    header: "Score",
-    accessor: "score",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Teacher",
-    accessor: "teacher",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Class",
-    accessor: "class",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Date",
-    accessor: "date",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Actions",
-    accessor: "action",
-  },
-];
-
-const renderRow = (item: ResultList) => (
+const renderRow = async (item: ResultList) => (
   <tr
     key={item.id}
     className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-opPurpleLight "
@@ -79,15 +45,12 @@ const renderRow = (item: ResultList) => (
     </td>
     <td>
       <div className="flex items-center gap-2">
-        <Link href={`/list/teachers/${item.id}`}>
-          <button className="flex items-center justify-center size-7 rounded-full bg-opSky">
-            <Image src={"/edit.png"} alt="edit" width={16} height={16} />
-          </button>
-        </Link>
-        {role === "admin" && (
-          <button className="flex items-center justify-center size-7 rounded-full bg-opPurple">
-            <Image src={"/delete.png"} alt="delete" width={16} height={16} />
-          </button>
+        {((await getRole()).role === "admin" ||
+          (await getRole()).role === "teacher") && (
+          <>
+            <FormModal table="result" type="update" data={item} />
+            <FormModal table="result" type="delete" id={item.id} />
+          </>
         )}
       </div>
     </td>
@@ -106,7 +69,46 @@ const ResultListPage = async ({
   const pageNumber = page ? parseInt(page) : 1;
 
   const query: Prisma.ResultWhereInput = {};
+  const { role, currentUserId } = await getRole();
+  const columns = [
+    {
+      header: "Title",
+      accessor: "title",
+    },
 
+    {
+      header: "Student",
+      accessor: "student",
+    },
+    {
+      header: "Score",
+      accessor: "score",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Teacher",
+      accessor: "teacher",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Class",
+      accessor: "class",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Date",
+      accessor: "date",
+      className: "hidden md:table-cell",
+    },
+    ...(role === "admin" || role === "teacher"
+      ? [
+          {
+            header: "Actions",
+            accessor: "action",
+          },
+        ]
+      : []),
+  ];
   // URL PARAMS CONDITIONS
 
   if (queryParams) {
@@ -132,6 +134,32 @@ const ResultListPage = async ({
         }
       }
     }
+  }
+
+  // ROLE CONDITIONS
+  switch (role) {
+    case "admin":
+      break;
+    case "teacher":
+      query.OR = [
+        {
+          exam: { lesson: { teacherId: currentUserId! } },
+        },
+        {
+          assignment: { lesson: { teacherId: currentUserId! } },
+        },
+      ];
+      break;
+    case "student":
+      query.studentId = currentUserId!;
+      break;
+    case "parent":
+      query.student = {
+        parentId: currentUserId!,
+      };
+      break;
+    default:
+      break;
   }
 
   const [resultsData, count] = await prisma.$transaction([
@@ -202,11 +230,10 @@ const ResultListPage = async ({
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-opYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
-            {role === "admin" && (
-              <button className="size-8 flex  items-center justify-center rounded-full bg-opYellow">
-                <Image src="/plus.png" alt="plus icon" width={14} height={14} />
-              </button>
-            )}
+            {role === "admin" ||
+              (role === "teacher" && (
+                <FormModal table="result" type="create" />
+              ))}
           </div>
         </div>
       </div>

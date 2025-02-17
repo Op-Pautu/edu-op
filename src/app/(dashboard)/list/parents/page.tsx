@@ -1,43 +1,16 @@
-import { FormModal } from "@/components/form-modal";
+import FormModal from "@/components/form-modal";
 import { Pagination } from "@/components/pagination";
 import { TableList } from "@/components/table-list";
 import { TableSearch } from "@/components/table-search";
 import { ITEMS_PER_PAGE } from "@/lib/constants";
-import { role } from "@/lib/data";
 import prisma from "@/lib/prisma";
+import { getRole } from "@/lib/utils";
 import { Parent, Prisma, Student } from "@prisma/client";
 import Image from "next/image";
 
-const columns = [
-  {
-    header: "Info",
-    accessor: "info",
-  },
-  {
-    header: "Student Names",
-    accessor: "students",
-    className: "hidden md:table-cell",
-  },
-
-  {
-    header: "Phone",
-    accessor: "phone",
-    className: "hidden lg:table-cell",
-  },
-  {
-    header: "Address",
-    accessor: "address",
-    className: "hidden lg:table-cell",
-  },
-  {
-    header: "Actions",
-    accessor: "actions",
-  },
-];
-
 type ParentList = Parent & { students: Student[] };
 
-const renderRow = (item: ParentList) => {
+const renderRow = async (item: ParentList) => {
   return (
     <tr
       key={item.id}
@@ -56,14 +29,9 @@ const renderRow = (item: ParentList) => {
       <td className="hidden md:table-cell">{item.address}</td>
       <td className="">
         <div className="flex items-center gap-2">
-          {role === "admin" && (
+          {(await getRole()).role === "admin" && (
             <>
-              <FormModal
-                table="parent"
-                type="update"
-                id={item.id}
-                data={item}
-              />
+              <FormModal table="parent" type="update" data={item} />
               <FormModal table="parent" type="delete" id={item.id} />
             </>
           )}
@@ -85,6 +53,38 @@ const ParentsListPage = async ({
   const pageNumber = page ? parseInt(page) : 1;
 
   const query: Prisma.ParentWhereInput = {};
+
+  const { role } = await getRole();
+  const columns = [
+    {
+      header: "Info",
+      accessor: "info",
+    },
+    {
+      header: "Student Names",
+      accessor: "students",
+      className: "hidden md:table-cell",
+    },
+
+    {
+      header: "Phone",
+      accessor: "phone",
+      className: "hidden lg:table-cell",
+    },
+    {
+      header: "Address",
+      accessor: "address",
+      className: "hidden lg:table-cell",
+    },
+    ...(role === "admin"
+      ? [
+          {
+            header: "Actions",
+            accessor: "actions",
+          },
+        ]
+      : []),
+  ];
 
   // URL PARAMS CONDITIONS
   if (queryParams) {
